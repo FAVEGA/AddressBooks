@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractBaseUser
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -15,10 +15,16 @@ class AddressBook(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        permissions = (
+            ('can_share_address_books',
+             'Can share address books'),
+        )
+
 
 class Group(models.Model):
     name = models.CharField(max_length=255)
-    address_book = models.ForeignKey(AddressBook)
+    address_book = models.ForeignKey(AddressBook, related_name='groups')
 
     def __str__(self):
         return str(self.address_book) + ' > ' + self.name
@@ -27,10 +33,21 @@ class Group(models.Model):
 class Address(models.Model):
     name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
-    group = models.ForeignKey(Group, related_name='addresses')
+    groups = models.ManyToManyField(Group, related_name='addresses')
 
     def __str__(self):
         return self.name + ' (' + self.email + ')'
+
+    class Meta:
+        verbose_name_plural = 'Addresses'
+
+
+class PermissionDummy(models.Model):
+    class Meta:
+        permissions = (
+            ('can_assign_permissions', 'Can assign permissions'),
+        )
+
 
 @receiver(post_save, sender=User)
 def create_auth_token(sender, instance=None, created=False, **kwargs):

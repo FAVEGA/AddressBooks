@@ -3,16 +3,11 @@ from address_books.models import Group, Address, AddressBook
 
 
 class AddressAdmin(admin.ModelAdmin):
-    fields = ['name', 'email', 'group']
-
-
-class AddressInline(admin.StackedInline):
-    model = Address
+    fields = ['name', 'email', 'groups']
 
 
 class GroupAdmin(admin.ModelAdmin):
-    fields = ['name', 'address_book']
-    inlines = [AddressInline]
+    fields = ['name', 'address_book', 'addresses']
 
 
 class AddressBookAdmin(admin.ModelAdmin):

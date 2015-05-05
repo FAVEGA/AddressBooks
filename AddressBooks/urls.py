@@ -16,6 +16,6 @@ urlpatterns = [
     url(r'^addresses/$', AddressListView.as_view(), name='addresses'),
     url(r'^addresses/(?P<pk>\d+)', AddressDetailView.as_view(),
         name='addresses'),
-
-
+    url(r'users/$', UserListView.as_view(), name='users'),
+    url(r'users/(?P<pk>\d+)', UserDetailView.as_view(), name='user'),
 ]
