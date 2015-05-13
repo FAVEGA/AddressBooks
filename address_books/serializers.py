@@ -46,13 +46,13 @@ class AddressBookSerializer(FilterRelatedMixin, ModelSerializer):
     def validate_groups(self, value):
         user = self.context['request'].user
         for group in value:
-            if (user not in group.address_book.shared_with
-                    or user != group.address_book.owner):
+            if (user not in group.address_book.shared_with.all()
+                    and user != group.address_book.owner):
                 raise serializers.ValidationError("Invalid group set")
         return value
 
     def validate_shared_with(self, value):
-        if not self.context['request'].user.has_perm('can_share_address_books'):
+        if not self.context['request'].user.has_perm('share_addressbook'):
             raise PermissionError(
                 "You don't have permission to share address books"
             )
@@ -70,12 +70,11 @@ class GroupSerializer(FilterRelatedMixin, ModelSerializer):
                                        many=True)
 
     def __init__(self, *args, **kwargs):
-        print(args, kwargs)
         super().__init__(*args, **kwargs)
 
     def validate_address_book(self, value):
         user = self.context['request'].user
-        if user not in value.shared_with.all() or user != value.owner:
+        if user not in value.shared_with.all() and user != value.owner:
             raise serializers.ValidationError("Invalid address book")
         return value
 
@@ -83,7 +82,7 @@ class GroupSerializer(FilterRelatedMixin, ModelSerializer):
         user = self.context['request'].user
         for address in value:
             if (user not in address.group.address_book.shared_with.all()
-                or user != address.group.address_book.owner):
+                    and user != address.group.address_book.owner):
                 raise serializers.ValidationError("Invalid addresses")
         return value
 
@@ -99,7 +98,7 @@ class GroupSerializer(FilterRelatedMixin, ModelSerializer):
 
     class Meta:
         fields = ['id', 'name', 'address_book', 'addresses']
-        model = Address
+        model = Group
 
 
 class AddressSerializer(FilterRelatedMixin, ModelSerializer):
@@ -126,7 +125,7 @@ class AddressSerializer(FilterRelatedMixin, ModelSerializer):
         user = self.context['request'].user
         for group in value:
             if (user not in group.address_book.shared_with.all()
-                    or user != group.address_book.owner):
+                    and user != group.address_book.owner):
                 raise serializers.ValidationError("Invalid group set")
         return value
 
@@ -160,8 +159,20 @@ class PermissionField(serializers.Field):
 
 
 class UserSerializer(ModelSerializer):
-    can_add_addressbook = PermissionField(
-        permission='add_addressbook')
+    can_add_addressbook = PermissionField(permission='add_addressbook')
+    can_change_addressbook = PermissionField(permission='change_addressbook')
+    can_delete_addressbook = PermissionField(permission='delete_addressbook')
+    can_share_addressbook = PermissionField(permission='share_addressbook')
+
+    can_assign_permissions = PermissionField(permission='assign_permissions')
+
+    can_add_group = PermissionField(permission='add_group')
+    can_change_group = PermissionField(permission='change_group')
+    can_delete_group = PermissionField(permission='delete_group')
+
+    can_add_address = PermissionField(permission='add_address')
+    can_change_address = PermissionField(permission='change_address')
+    can_delete_address = PermissionField(permission='delete_address')
 
     def create(self, validated_data):
         permissions = dict()
@@ -170,6 +181,10 @@ class UserSerializer(ModelSerializer):
                 permissions[field.permission] = validated_data.pop(
                     field.permission
                 )
+                if permissions[field.permission] is not None:
+                    raise PermissionError(
+                        "You do not have permission to assign permissions"
+                    )
         user = super().create(validated_data)
         for permission, value in permissions.items():
             permission = Permission.objects.get(
@@ -188,7 +203,6 @@ class UserSerializer(ModelSerializer):
                     field.permission
                 )
         user = super().update(instance, validated_data)
-        print(permissions)
         for permission, value in permissions.items():
             permission = Permission.objects.get(
                 codename=permission, content_type__app_label='address_books'
@@ -201,5 +215,9 @@ class UserSerializer(ModelSerializer):
         return user
 
     class Meta:
-        fields = ['id', 'username', 'email', 'can_add_addressbook']
+        fields = ['id', 'username', 'email', 'can_add_addressbook',
+                  'can_change_addressbook', 'can_delete_addressbook',
+                  'can_add_group', 'can_change_group', 'can_delete_group',
+                  'can_add_address', 'can_change_address', 'can_delete_address',
+                  'can_assign_permissions', 'can_share_addressbook']
         model = User

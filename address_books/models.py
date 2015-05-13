@@ -17,7 +17,7 @@ class AddressBook(models.Model):
 
     class Meta:
         permissions = (
-            ('can_share_address_books',
+            ('share_addressbook',
              'Can share address books'),
         )
 
@@ -45,7 +45,7 @@ class Address(models.Model):
 class PermissionDummy(models.Model):
     class Meta:
         permissions = (
-            ('can_assign_permissions', 'Can assign permissions'),
+            ('assign_permissions', 'Can assign permissions'),
         )
 
 
