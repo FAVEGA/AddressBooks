@@ -3,7 +3,6 @@ python:
   - "3.4"
 before_script:
   - pip install -r test_requirements.txt --use-mirrors
-  - git clone https://github.com/autrilla/AddressBooks.git
   - cd AddressBooks
   - py.test address_books/tests.py --cov=address_books
   - cd -
