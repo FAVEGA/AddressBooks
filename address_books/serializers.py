@@ -115,6 +115,7 @@ class AddressSerializer(FilterRelatedMixin, ModelSerializer):
             for group in address_book.groups.all():
                 for address in group.addresses.all():
                     if (address.email == data['email']
+                            and 'id' in data
                             and data['id'] != address.id):
                         raise serializers.ValidationError(
                             "Duplicate email address"

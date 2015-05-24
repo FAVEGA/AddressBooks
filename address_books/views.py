@@ -108,9 +108,10 @@ class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        return Address.objects.filter(
+        return (Address.objects.filter(
             groups__address_book__shared_with__id=user.id
         )
+        | Address.objects.filter(groups__address_book__owner__id=user.id))
 
 
 class UserListView(generics.ListCreateAPIView):
