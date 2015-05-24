@@ -51,11 +51,11 @@ class GroupListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        queryset = (Group.objects.filter(address_book__shared_with__id=user.id)
-                    | Group.objects.filter(address_book__owner__id=user.id))
+        queryset = (Group.objects.filter(addressbook__shared_with__id=user.id)
+                    | Group.objects.filter(addressbook__owner__id=user.id))
         addressbook = self.request.QUERY_PARAMS.get('addressbook', None)
         if addressbook is not None:
-            queryset = queryset.filter(address_book=addressbook)
+            queryset = queryset.filter(addressbook=addressbook)
         return queryset
 
 
@@ -70,8 +70,8 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        return (Group.objects.filter(address_book__shared_with__id=user.id)
-                | Group.objects.filter(address_book__owner__id=user.id))
+        return (Group.objects.filter(addressbook__shared_with__id=user.id)
+                | Group.objects.filter(addressbook__owner__id=user.id))
 
 
 class AddressListView(generics.ListCreateAPIView):
@@ -87,12 +87,11 @@ class AddressListView(generics.ListCreateAPIView):
         user = self.get_serializer_context()['request'].user
         queryset = (
             Address.objects.filter(
-                groups__address_book__shared_with__id=user.id
+                groups__addressbook__shared_with__id=user.id
             )
-            | Address.objects.filter(groups__address_book__owner__id=user.id))
+            | Address.objects.filter(groups__addressbook__owner__id=user.id))
         group = self.request.QUERY_PARAMS.get('group', None)
         if group is not None:
-            print("Group is", group)
             queryset = queryset.filter(groups__id=group)
         return queryset
 
@@ -109,9 +108,8 @@ class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
         return (Address.objects.filter(
-            groups__address_book__shared_with__id=user.id
-        )
-        | Address.objects.filter(groups__address_book__owner__id=user.id))
+            groups__addressbook__shared_with__id=user.id
+        ) | Address.objects.filter(groups__addressbook__owner__id=user.id))
 
 
 class UserListView(generics.ListCreateAPIView):

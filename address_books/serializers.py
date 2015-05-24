@@ -32,22 +32,31 @@ class FilterRelatedMixin(object):
 
 class AddressBookSerializer(FilterRelatedMixin, ModelSerializer):
     name = CharField()
-    groups = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True)
+    groups = PrimaryKeyRelatedField(
+        queryset=Group.objects.all(), many=True, required=False
+    )
     owner = PrimaryKeyRelatedField(queryset=User.objects.all())
-    shared_with = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
+    shared_with = PrimaryKeyRelatedField(
+        queryset=User.objects.all(), many=True, required=False
+    )
 
     def filter_groups(self, queryset):
         user = self.context['request'].user
         return (
-            queryset.filter(address_book__shared_with__id=user.id)
-            | queryset.filter(address_book__owner__id=user.id)
+            queryset.filter(addressbook__shared_with__id=user.id)
+            | queryset.filter(addressbook__owner__id=user.id)
         )
+
+    def validate_name(self, value):
+        if AddressBook.objects.filter(name=value).exists():
+            raise serializers.ValidationError("Duplicate address book name")
+        return value
 
     def validate_groups(self, value):
         user = self.context['request'].user
         for group in value:
-            if (user not in group.address_book.shared_with.all()
-                    and user != group.address_book.owner):
+            if (user not in group.addressbook.shared_with.all()
+                    and user != group.addressbook.owner):
                 raise serializers.ValidationError("Invalid group set")
         return value
 
@@ -65,14 +74,21 @@ class AddressBookSerializer(FilterRelatedMixin, ModelSerializer):
 
 class GroupSerializer(FilterRelatedMixin, ModelSerializer):
     name = CharField()
-    address_book = PrimaryKeyRelatedField(queryset=AddressBook.objects.all())
+    addressbook = PrimaryKeyRelatedField(queryset=AddressBook.objects.all())
     addresses = PrimaryKeyRelatedField(queryset=Address.objects.all(),
-                                       many=True)
+                                       many=True, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def validate_address_book(self, value):
+    def validate(self, attrs):
+        if Group.objects.filter(
+                name=attrs['name'], addressbook=attrs['addressbook']
+        ).exists():
+            raise serializers.ValidationError("Duplicate group name")
+        return attrs
+
+    def validate_addressbook(self, value):
         user = self.context['request'].user
         if user not in value.shared_with.all() and user != value.owner:
             raise serializers.ValidationError("Invalid address book")
@@ -81,23 +97,23 @@ class GroupSerializer(FilterRelatedMixin, ModelSerializer):
     def validate_addresses(self, value):
         user = self.context['request'].user
         for address in value:
-            if (user not in address.group.address_book.shared_with.all()
-                    and user != address.group.address_book.owner):
+            if (user not in address.group.addressbook.shared_with.all()
+                    and user != address.group.addressbook.owner):
                 raise serializers.ValidationError("Invalid addresses")
         return value
 
-    def filter_address_book(self, queryset):
+    def filter_addressbook(self, queryset):
         user = self.context['request'].user
         return queryset.filter(shared_with__id=user.id) | queryset.filter(
             owner__id=user.id)
 
     def filter_addresses(self, queryset):
         user = self.context['request'].user
-        return (queryset.filter(groups__address_book__shared_with__id=user.id)
-                | queryset.filter(groups__address_book__owner__id=user.id))
+        return (queryset.filter(groups__addressbook__shared_with__id=user.id)
+                | queryset.filter(groups__addressbook__owner__id=user.id)) 
 
     class Meta:
-        fields = ['id', 'name', 'address_book', 'addresses']
+        fields = ['id', 'name', 'addressbook', 'addresses']
         model = Group
 
 
@@ -107,33 +123,27 @@ class AddressSerializer(FilterRelatedMixin, ModelSerializer):
     groups = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True)
 
     def validate(self, data):
-        address_books = set()
-        for group in data['groups']:
-            address_books.add(group.address_book)
-
-        for address_book in address_books:
-            for group in address_book.groups.all():
-                for address in group.addresses.all():
-                    if (address.email == data['email']
-                            and 'id' in data
-                            and data['id'] != address.id):
-                        raise serializers.ValidationError(
-                            "Duplicate email address"
-                        )
+        # Check that the email is not a duplicate
+        q = Address.objects.filter(
+            email=data['email'], groups__addressbook__groups__in=data['groups']
+        )
+        q = q.exclude(id=self.instance.id) if self.instance is not None else q
+        if q.exists():
+            raise serializers.ValidationError("Duplicate email address")
         return data
 
     def validate_group(self, value):
         user = self.context['request'].user
         for group in value:
-            if (user not in group.address_book.shared_with.all()
-                    and user != group.address_book.owner):
+            if (user not in group.addressbook.shared_with.all()
+                    and user != group.addressbook.owner):
                 raise serializers.ValidationError("Invalid group set")
         return value
 
     def filter_group(self, queryset):
         user = self.context['request'].user
-        return (queryset.filter(address_book__shared_with__id=user.id)
-                | queryset.filter(address_book__owner__id=user.id))
+        return (queryset.filter(addressbook__shared_with__id=user.id)
+                | queryset.filter(addressbook__owner__id=user.id))
 
     class Meta:
         fields = ['id', 'name', 'email', 'groups']
@@ -148,7 +158,7 @@ class PermissionField(serializers.Field):
     def get_attribute(self, instance):
         perm = Permission.objects.get(
             codename=self.permission,
-            content_type__app_label='address_books'
+            content_type__app_label='addressbooks'
         )
         return perm in instance.user_permissions.all()
 
@@ -189,7 +199,7 @@ class UserSerializer(ModelSerializer):
         user = super().create(validated_data)
         for permission, value in permissions.items():
             permission = Permission.objects.get(
-                codename=permission, content_type__app_label='address_books'
+                codename=permission, content_type__app_label='addressbooks'
             )
             if value:
                 user.user_permissions.add(permission)
@@ -206,7 +216,7 @@ class UserSerializer(ModelSerializer):
         user = super().update(instance, validated_data)
         for permission, value in permissions.items():
             permission = Permission.objects.get(
-                codename=permission, content_type__app_label='address_books'
+                codename=permission, content_type__app_label='addressbooks'
             )
             if value:
                 user.user_permissions.add(permission)

@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 
 
 class AddressBook(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     owner = models.ForeignKey(User, related_name='owned_address_books_set')
     shared_with = models.ManyToManyField(
         User, related_name='shared_address_books_set', blank=True
@@ -24,10 +24,10 @@ class AddressBook(models.Model):
 
 class Group(models.Model):
     name = models.CharField(max_length=255)
-    address_book = models.ForeignKey(AddressBook, related_name='groups')
+    addressbook = models.ForeignKey(AddressBook, related_name='groups')
 
     def __str__(self):
-        return str(self.address_book) + ' > ' + self.name
+        return str(self.addressbook) + ' > ' + self.name
 
 
 class Address(models.Model):

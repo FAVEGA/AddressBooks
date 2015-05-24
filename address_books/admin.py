@@ -7,7 +7,7 @@ class AddressAdmin(admin.ModelAdmin):
 
 
 class GroupAdmin(admin.ModelAdmin):
-    fields = ['name', 'address_book', 'addresses']
+    fields = ['name', 'addressbook', 'addresses']
 
 
 class AddressBookAdmin(admin.ModelAdmin):

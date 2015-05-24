@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('name', models.CharField(max_length=255)),
-                ('address_book', models.ForeignKey(related_name='groups', to='address_books.AddressBook')),
+                ('addressbook', models.ForeignKey(related_name='groups', to='address_books.AddressBook')),
             ],
         ),
         migrations.CreateModel(

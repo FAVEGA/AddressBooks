@@ -13,7 +13,7 @@ urlpatterns = [
     url(r'^addressbooks/(?P<pk>\d+)', AddressBookDetailView.as_view(),
         name='addressbook'),
     url(r'^groups/$', GroupListView.as_view(), name='groups'),
-    url(r'^groups/(?P<pk>\d+)', GroupDetailView.as_view(), name='groups'),
+    url(r'^groups/(?P<pk>\d+)', GroupDetailView.as_view(), name='group'),
     url(r'^addresses/$', AddressListView.as_view(), name='addresses'),
     url(r'^addresses/(?P<pk>\d+)', AddressDetailView.as_view(),
         name='address'),
