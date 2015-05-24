@@ -158,7 +158,7 @@ class PermissionField(serializers.Field):
     def get_attribute(self, instance):
         perm = Permission.objects.get(
             codename=self.permission,
-            content_type__app_label='addressbooks'
+            content_type__app_label='address_books'
         )
         return perm in instance.user_permissions.all()
 
