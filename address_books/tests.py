@@ -250,6 +250,20 @@ class AddressesTests(APITestCase):
         self.assertEquals(response.status_code, status.HTTP_200_OK)
         self.assertEquals(response.data['count'], count)
 
+    def test_get_addresses_by_group(self):
+        count = 100
+        for x in range(count):
+            address = Address.objects.create(name=str(x), email=str(x))
+            if x % 2:
+                address.groups.add(self.parent_group_2)
+            else:
+                address.groups.add(self.parent_group_1)
+            address.save()
+        url = reverse('addresses') + '?group=' + str(self.parent_group_1.id)
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data['count'], count/2)
+
     def test_get_address(self):
         address = Address.objects.create(name='Test', email='Test')
         address.groups.add(self.parent_group_1)
