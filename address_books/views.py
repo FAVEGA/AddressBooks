@@ -24,7 +24,7 @@ class AddressBookListView(generics.ListCreateAPIView):
         user = self.get_serializer_context()['request'].user
         return AddressBook.objects.filter(
             Q(owner=user) | Q(shared_with=user)
-        )
+        ).distinct()
 
 
 class AddressBookDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -40,7 +40,7 @@ class AddressBookDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = self.get_serializer_context()['request'].user
         return AddressBook.objects.filter(
             Q(owner=user) | Q(shared_with=user)
-        )
+        ).distinct()
 
 
 class GroupListView(generics.ListCreateAPIView):
@@ -57,7 +57,7 @@ class GroupListView(generics.ListCreateAPIView):
         queryset = Group.objects.filter(
             (Q(addressbook__owner=user)
              | Q(addressbook__shared_with=user))
-        )
+        ).distinct()
         addressbook = self.request.QUERY_PARAMS.get('addressbook', None)
         if addressbook is not None:
             queryset = queryset.filter(addressbook=addressbook)
@@ -77,7 +77,7 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = self.get_serializer_context()['request'].user
         return Group.objects.filter(
             Q(addressbook__owner=user) | Q(addressbook__shared_with=user)
-        )
+        ).distinct()
 
 
 class AddressListView(generics.ListCreateAPIView):
@@ -94,7 +94,7 @@ class AddressListView(generics.ListCreateAPIView):
         queryset = Address.objects.filter(
             (Q(groups__addressbook__owner=user)
              | Q(groups__addressbook__shared_with=user))
-        )
+        ).distinct()
         group = self.request.QUERY_PARAMS.get('group', None)
         if group is not None:
             queryset = queryset.filter(groups__id=group)
@@ -115,7 +115,7 @@ class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Address.objects.filter(
             (Q(groups__addressbook__owner=user)
              | Q(groups__addressbook__shared_with=user))
-        )
+        ).distinct()
 
 
 class UserListView(generics.ListCreateAPIView):
