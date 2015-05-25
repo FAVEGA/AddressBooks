@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework.authentication import SessionAuthentication, \
     BasicAuthentication, TokenAuthentication
@@ -21,8 +22,9 @@ class AddressBookListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        return (AddressBook.objects.filter(owner=user)
-                | AddressBook.objects.filter(shared_with__id=user.id))
+        return AddressBook.objects.filter(
+            Q(owner=user) | Q(shared_with=user)
+        )
 
 
 class AddressBookDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -36,8 +38,9 @@ class AddressBookDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        return (AddressBook.objects.filter(owner=user)
-                | AddressBook.objects.filter(shared_with__id=user.id))
+        return AddressBook.objects.filter(
+            Q(owner=user) | Q(shared_with=user)
+        )
 
 
 class GroupListView(generics.ListCreateAPIView):
@@ -51,8 +54,10 @@ class GroupListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        queryset = (Group.objects.filter(addressbook__shared_with__id=user.id)
-                    | Group.objects.filter(addressbook__owner__id=user.id))
+        queryset = Group.objects.filter(
+            (Q(addressbook__owner=user)
+             | Q(addressbook__shared_with=user))
+        )
         addressbook = self.request.QUERY_PARAMS.get('addressbook', None)
         if addressbook is not None:
             queryset = queryset.filter(addressbook=addressbook)
@@ -70,8 +75,9 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        return (Group.objects.filter(addressbook__shared_with__id=user.id)
-                | Group.objects.filter(addressbook__owner__id=user.id))
+        return Group.objects.filter(
+            Q(addressbook__owner=user) | Q(addressbook__shared_with=user)
+        )
 
 
 class AddressListView(generics.ListCreateAPIView):
@@ -85,11 +91,10 @@ class AddressListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        queryset = (
-            Address.objects.filter(
-                groups__addressbook__shared_with__id=user.id
-            )
-            | Address.objects.filter(groups__addressbook__owner__id=user.id))
+        queryset = Address.objects.filter(
+            (Q(groups__addressbook__owner=user)
+             | Q(groups__addressbook__shared_with=user))
+        )
         group = self.request.QUERY_PARAMS.get('group', None)
         if group is not None:
             queryset = queryset.filter(groups__id=group)
@@ -107,9 +112,10 @@ class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.get_serializer_context()['request'].user
-        return (Address.objects.filter(
-            groups__addressbook__shared_with__id=user.id
-        ) | Address.objects.filter(groups__addressbook__owner__id=user.id))
+        return Address.objects.filter(
+            (Q(groups__addressbook__owner=user)
+             | Q(groups__addressbook__shared_with=user))
+        )
 
 
 class UserListView(generics.ListCreateAPIView):
