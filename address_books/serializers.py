@@ -50,7 +50,7 @@ class AddressBookSerializer(FilterRelatedMixin, ModelSerializer):
     def validate_name(self, value):
         q = AddressBook.objects.filter(name=value) 
         if self.instance is not None:
-            q.exclude(id=self.instance.id)
+            q = q.exclude(id=self.instance.id)
         if q.exists():
             raise serializers.ValidationError("Duplicate address book name")
         return value
