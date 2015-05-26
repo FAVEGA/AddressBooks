@@ -85,9 +85,12 @@ class GroupSerializer(FilterRelatedMixin, ModelSerializer):
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs):
-        if Group.objects.filter(
+        q = Group.objects.filter(
                 name=attrs['name'], addressbook=attrs['addressbook']
-        ).exists():
+        )
+        if self.instance is not None:
+            q = q.exclude(id=self.instance.id)
+        if q.exists():
             raise serializers.ValidationError("Duplicate group name")
         return attrs
 
