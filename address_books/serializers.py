@@ -68,7 +68,7 @@ class AddressBookSerializer(FilterRelatedMixin, ModelSerializer):
             if self.instance is not None:
                 if self.instance.shared_with == value:
                     return value
-            elif not value:
+            elif value:
                 raise PermissionError(
                     "You don't have permission to share address books"
                 )
