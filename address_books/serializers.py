@@ -65,9 +65,13 @@ class AddressBookSerializer(FilterRelatedMixin, ModelSerializer):
 
     def validate_shared_with(self, value):
         if not self.context['request'].user.has_perm('share_addressbook'):
-            raise PermissionError(
-                "You don't have permission to share address books"
-            )
+            if self.instance is not None
+                if self.instance.shared_with == value:
+                    return value
+            elif not value:
+                raise PermissionError(
+                    "You don't have permission to share address books"
+                )
         return value
 
     class Meta:
