@@ -64,7 +64,8 @@ class AddressBookSerializer(FilterRelatedMixin, ModelSerializer):
         return value
 
     def validate_shared_with(self, value):
-        if not self.context['request'].user.has_perm('share_addressbook'):
+        user = self.context['request'].user
+        if not user.has_perm('address_books.share_addressbook'):
             if self.instance is not None:
                 if self.instance.shared_with == value:
                     return value
