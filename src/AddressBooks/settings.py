@@ -16,14 +16,14 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-DEBUG = True
+DEBUG = False
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-ALLOWED_HOSTS = ['addressbooks.favega.com']
+ALLOWED_HOSTS = ['lithium.autrilla.com', 'addressbooks.favega.com']
 
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -44,10 +44,13 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'address_books'
+    'address_books',
+    'opbeat.contrib.django',
+    'cachalot',
 )
 
 MIDDLEWARE_CLASSES = (
+    'opbeat.contrib.django.middleware.OpbeatAPMMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,7 +59,15 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 )
+
+OPBEAT = {
+    'ORGANIZATION_ID': '023d908be4ea4d9fa12082bc13d94512',
+    'APP_ID': '8cc5851f32',
+    'SECRET_TOKEN': '6cc789e15a9ea0023ee272ec782c7d1a7e2d8683',
+}
+
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
@@ -65,6 +76,13 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     )
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': 'redis:6379',
+    }
 }
 
 ROOT_URLCONF = 'AddressBooks.urls'
@@ -90,24 +108,16 @@ WSGI_APPLICATION = 'AddressBooks.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-if not DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'addressbooks',
-            'USER': os.environ.get('POSTGRES_USER'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-            'HOST': os.environ.get('POSTGRES_HOST'),
-            'PORT': '',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'addressbooks',
+        'USER': 'addressbooks', 
+        'PASSWORD': 'addressbooks',
+        'HOST': 'addressbooks-postgres',
+        'PORT': '',
+        'CONNECTION_MAX_AGE': 100,
     }
-else:
-    SECRET_KEY ='219bnr912nhrc918232m2 r-19 m89try t3 POT# Crcqcic9oho'
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'db.sqlite3',
-        }
 }
 
 
